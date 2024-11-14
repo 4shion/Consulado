@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''  # Cambia 'password' por tu contraseña real
-app.config['MYSQL_DB'] = 'flaskcontacts'  # Verifica el nombre de tu base de datos
+app.config['MYSQL_DB'] = 'cafe_consulado'  # Verifica el nombre de tu base de datos
 app.config['MYSQL_SSL_CA'] = 'C:/xampp/mysql/certs/ca-cert.pem'
 app.config['MYSQL_SSL_CERT'] = 'C:/xampp/mysql/certs/server-cert.pem'
 app.config['MYSQL_SSL_KEY'] = 'C:/xampp/mysql/certs/server-key.pem'
@@ -16,13 +16,12 @@ mysql = MySQL(app)
 
 app.secret_key = 'mysecretkey'
 
+#Inicio
 @app.route('/')
 def Index():
-    cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM contacts')
-    data = cur.fetchall()
-    return render_template('index.html', contacts = data)
+    return render_template('index.html')
 
+#Botones
 @app.route('/swicht_main')
 def swicht_main():
     return render_template('index.html')
@@ -46,6 +45,31 @@ def swicht_proveedores():
 #@app.route('/menu')
 #def menu():
 #    return
+
+#Funciones Productos
+@app.route('/agg_productos', methods = ['POST'])
+def agg_productos():
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        precio = request.form['precio']
+        cantidad = request.form['cantidad']
+        proveedor = request.form['proveedor']
+        # Si quieres manejar una imagen
+        if 'imagen' in request.files:
+            imagen = request.files['imagen']
+            imagen_binaria = imagen.read()
+            cur = mysql.connection.cursor()
+            cur.execute('''
+                            INSERT INTO productos (nombre, precio, cantidad, imagen, estado, proveedores_idProveedor)
+                            VALUES (%s, %s, %s, %s, %s, (SELECT idProveedor FROM proveedores WHERE nombre = %s))
+                        ''', (nombre, precio, cantidad, imagen_binaria, True, proveedor))
+            mysql.connection.commit()
+            flash('Producto añadido satisfactoriamente')
+            return redirect(url_for('swicht_productos'))
+        else:
+            flash('No se ha subido ninguna imagen')
+            return redirect(url_for('swicht_productos'))
+
 
 @app.route('/add_contact', methods=['POST'])
 def add_contact():

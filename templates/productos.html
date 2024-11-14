@@ -4,3 +4,58 @@
 <a href="/swicht_productos">Productos</a>
 <a href="/swicht_proveedores">Proveedores</a>
 <a href="/menu">Menu</a>
+
+<br>
+<br>
+
+<form action="/agg_productos" method="POST" enctype="multipart/form-data">
+    <input type="text" name="nombre" placeholder="Nombre">
+    <input type="number" name="precio" placeholder="Precio" step="0.01">    
+    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01">
+    <input type="text" name="proveedor" placeholder="Proveedor">
+    <input type="file" name="imagen" accept="image/*">
+    <button type="submit">
+        Save
+    </button>
+</form>
+
+<br>
+<br>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+    <p>{{ message }}</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<br>
+<br>
+
+<table>
+    <thead>
+        <tr>
+            <td>Fullname</td>
+            <td>Phone</td>
+            <td>Emmail</td>
+            <td>Operations</td>
+        </tr>
+    </thead>
+</table>
+
+<table>
+    <tbody>
+        {% for contact in contacts %}
+            <tr>
+                <td>{{ contact.1 }}</td>
+                <td>{{ contact.2 }}</td>
+                <td>{{ contact.3 }}</td>
+                <td>
+                    <a href="/edit/{{contact.0}}">Edit</a>
+                    <a href="/delete/{{contact.0}}">Delete</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
