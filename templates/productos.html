@@ -36,24 +36,27 @@
 <table>
     <thead>
         <tr>
-            <td>Fullname</td>
-            <td>Phone</td>
-            <td>Emmail</td>
-            <td>Operations</td>
+            <td>Nombre</td>
+            <td>Precio</td>
+            <td>Cantidad</td>
+            <td>Imagen</td>
+            <td>Proveedor</td>
+            <td>Operaciones</td>
         </tr>
     </thead>
-</table>
-
-<table>
     <tbody>
-        {% for contact in contacts %}
+        {% for producto in productos %}
             <tr>
-                <td>{{ contact.1 }}</td>
-                <td>{{ contact.2 }}</td>
-                <td>{{ contact.3 }}</td>
+                <td>{{ producto.1 }}</td>
+                <td>{{ producto.2 }}</td>
+                <td>{{ producto.3 }}</td>
                 <td>
-                    <a href="/edit/{{contact.0}}">Edit</a>
-                    <a href="/delete/{{contact.0}}">Delete</a>
+                    <img src="data:image/jpeg;base64,{{ producto.4 }}" alt="Imagen del producto" width="100">
+                </td>
+                <td>{{ producto.6 }}</td>
+                <td>
+                    <a href="/edit/{{ producto.0 }}">Editar</a>
+                    <a href="/delete/{{ producto.0 }}">Eliminar</a>
                 </td>
             </tr>
         {% endfor %}

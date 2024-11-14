@@ -1,4 +1,5 @@
 # pip3 install flask flask-mysqldb
+import base64
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_mysqldb import MySQL
 
@@ -21,32 +22,53 @@ app.secret_key = 'mysecretkey'
 def Index():
     return render_template('index.html')
 
-#Botones
+#Boton Main
 @app.route('/swicht_main')
 def swicht_main():
     return render_template('index.html')
 
+#Boton Clientes
 @app.route('/swicht_clientes')
 def swicht_clientes():
     return render_template('clientes.html')
 
+#Boton Empleados
 @app.route('/swicht_empleados')
 def swicht_empleados():
     return render_template('empleados.html')
 
+#Boton Productos
 @app.route('/swicht_productos')
 def swicht_productos():
-    return render_template('productos.html')
+    cur = mysql.connection.cursor()
+    cur.execute('''
+        SELECT p.idProductos, p.nombre, p.precio, p.cantidad, p.imagen, p.estado, pr.nombre AS proveedor_nombre
+        FROM productos p
+        JOIN proveedores pr ON p.proveedores_idProveedor = pr.idProveedor
+        WHERE p.estado = TRUE
+    ''')
+    data = cur.fetchall()
+    # Codificar solo la imagen en base64
+    productos = []
+    for row in data:
+        # Codificar la imagen en base64 si existe
+        imagen_base64 = base64.b64encode(row[4]).decode('utf-8') if row[4] else None
+        # Reemplazar la imagen binaria con su versión en base64 en el tuple
+        productos.append((row[0], row[1], row[2], row[3], imagen_base64, row[5], row[6]))
 
+    return render_template('productos.html', productos = productos)
+
+#Boton Proveedores
 @app.route('/swicht_proveedores')
 def swicht_proveedores():
     return render_template('proveedores.html')
 
+#Boton menu
 #@app.route('/menu')
 #def menu():
 #    return
 
-#Funciones Productos
+#Agregar productos
 @app.route('/agg_productos', methods = ['POST'])
 def agg_productos():
     if request.method == 'POST':
