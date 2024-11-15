@@ -14,9 +14,9 @@
     <input type="number" name="cantidad" placeholder="Cantidad" step="0.01">
     <input type="text" name="proveedor" placeholder="Proveedor">
     <input type="file" name="imagen" accept="image/*">
-    <button type="submit">
-        Save
-    </button>
+
+    <button type="submit">Guardar</button>
+    <button type="reset">Limpiar</button>
 </form>
 
 <br>
@@ -51,12 +51,12 @@
                 <td>{{ producto.2 }}</td>
                 <td>{{ producto.3 }}</td>
                 <td>
-                    <img src="data:image/jpeg;base64,{{ producto.4 }}" alt="Imagen del producto" width="100">
+                    <img src="data:image/png;base64,{{ producto.4 }}" alt="Imagen del producto" width="100">
                 </td>
                 <td>{{ producto.6 }}</td>
                 <td>
-                    <a href="/edit/{{ producto.0 }}">Editar</a>
-                    <a href="/delete/{{ producto.0 }}">Eliminar</a>
+                    <a href="/editar_productos/{{ producto.0 }}">Editar</a>
+                    <a href="/eliminar_productos/{{ producto.0 }}">Eliminar</a>
                 </td>
             </tr>
         {% endfor %}
