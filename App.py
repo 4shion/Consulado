@@ -135,14 +135,6 @@ def agg_productos():
         if not proveedor_existe:
             errores.append(f"El proveedor '{proveedor}' no existe en la base de datos.")
 
-        # Validar si el producto existe en la base de datos
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT COUNT(*) FROM productos WHERE nombre = %s and estado = True", (nombre,))
-        producto_existe = cur.fetchone()[0]
-
-        if producto_existe > 0:
-                errores.append(f"El producto '{nombre}' ya existe en la base de datos.")
-
         # Si hay errores, devolverlos al usuario
         if errores:
             for error in errores:
