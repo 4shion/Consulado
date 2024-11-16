@@ -1,27 +1,3 @@
-<a href="/swicht_main">IMG</a>
-<a href="/swicht_clientes">Clientes</a>
-<a href="/swicht_empleados">Empleados</a>
-<a href="/swicht_productos">Productos</a>
-<a href="/swicht_proveedores">Proveedores</a>
-<a href="/menu">Menu</a>
-
-<br>
-<br>
-
-<form action="/agg_productos" method="POST" enctype="multipart/form-data">
-    <input type="text" name="nombre" placeholder="Nombre">
-    <input type="number" name="precio" placeholder="Precio" step="0.01">    
-    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01">
-    <input type="text" name="proveedor" placeholder="Proveedor">
-    <input type="file" name="imagen" accept="image/*">
-
-    <button type="submit">Guardar</button>
-    <button type="reset">Limpiar</button>
-</form>
-
-<br>
-<br>
-
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 {% for message in messages %}
@@ -31,6 +7,70 @@
 {% endwith %}
 
 <br>
+
+<a href="/swicht_main" onclick="resetFormulario()">IMG</a>
+<a href="/swicht_clientes" onclick="resetFormulario()">Clientes</a>
+<a href="/swicht_empleados" onclick="resetFormulario()">Empleados</a>
+<a href="/swicht_productos" onclick="resetFormulario()">Productos</a>
+<a href="/swicht_proveedores" onclick="resetFormulario()">Proveedores</a>
+<a href="/menu">Menu</a>
+
+<br>
+
+<script>
+    function resetFormulario() {
+        fetch('/reset_bandera', { method: 'POST' })
+            .then(response => console.log("Bandera cambiada en el servidor"))
+            .catch(error => console.error("Error al cambiar bandera:", error));
+    }
+</script>
+
+<br>
+
+<form action="/agg_productos" method="POST" enctype="multipart/form-data">
+    {% if bandera %}
+    <input type="text" name="nombre" placeholder="Nombre" value="{{ producto_m.1 }}">
+    <input type="number" name="precio" placeholder="Precio" step="0.01" value="{{ producto_m.2 }}">    
+    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01" value="{{ producto_m.3 }}">
+    <input type="text" name="proveedor" placeholder="Proveedor" value="{{ producto_m.6 }}">
+
+    <img src="data:image/jpeg;base64,{{ producto_m[4] }}" alt="Imagen del producto" width="100">
+    <input type="file" name="imagen" accept="image/*">
+
+    {% else %}
+    <input type="text" name="nombre" placeholder="Nombre">
+    <input type="number" name="precio" placeholder="Precio" step="0.01">    
+    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01">
+    <input type="text" name="proveedor" placeholder="Proveedor">
+    <input type="file" name="imagen" accept="image/*">
+    {% endif %}
+
+    <button type="submit">Guardar</button>
+    <button type="button" onclick="window.location.href='/swicht_productos'; resetFormulario()">Limpiar</button>
+
+</form>
+
+<br>
+
+<script>
+    function confirmarEliminacion() {
+        return confirm("¿Estás seguro de que deseas eliminar este producto?");
+    }
+</script>
+
+<br>
+
+<form action="{{ url_for('buscar_productos') }}" method="GET">
+    <input type="text" name="query" placeholder="Buscar productos..." required>
+    <button type="submit">Buscar</button>
+</form>
+
+<br>
+
+{% if query %}
+    <h3>Resultados para "{{ query }}"</h3>
+{% endif %}
+
 <br>
 
 <table>
@@ -55,8 +95,8 @@
                 </td>
                 <td>{{ producto.6 }}</td>
                 <td>
-                    <a href="/editar_productos/{{ producto.0 }}">Editar</a>
-                    <a href="/eliminar_productos/{{ producto.0 }}">Eliminar</a>
+                    <a href="/editar_productos/{{ producto.0 }}" onclick="window.location.href='/swicht_productos'">Editar</a>
+                    <a href="/eliminar_productos/{{ producto.0 }}" onclick="resetFormulario(); return confirmarEliminacion()">Eliminar</a>
                 </td>
             </tr>
         {% endfor %}
