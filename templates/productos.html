@@ -29,20 +29,20 @@
 
 <form action="/agg_productos" method="POST" enctype="multipart/form-data">
     {% if bandera %}
-    <input type="text" name="nombre" placeholder="Nombre" value="{{ producto_m.1 }}">
-    <input type="number" name="precio" placeholder="Precio" step="0.01" value="{{ producto_m.2 }}">    
-    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01" value="{{ producto_m.3 }}">
-    <input type="text" name="proveedor" placeholder="Proveedor" value="{{ producto_m.6 }}">
+    <input type="text" name="nombre" placeholder="Nombre" value="{{ producto_m.1 }}" required>
+    <input type="number" name="precio" placeholder="Precio" step="0.01" value="{{ producto_m.2 }}" required>    
+    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01" value="{{ producto_m.3 }}" required>
+    <input type="text" name="proveedor" placeholder="Proveedor" value="{{ producto_m.6 }}" required>
 
     <img src="data:image/jpeg;base64,{{ producto_m[4] }}" alt="Imagen del producto" width="100">
-    <input type="file" name="imagen" accept="image/*">
+    <input type="file" name="imagen" accept="image/*" required>
 
     {% else %}
-    <input type="text" name="nombre" placeholder="Nombre">
-    <input type="number" name="precio" placeholder="Precio" step="0.01">    
-    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01">
-    <input type="text" name="proveedor" placeholder="Proveedor">
-    <input type="file" name="imagen" accept="image/*">
+    <input type="text" name="nombre" placeholder="Nombre" required>
+    <input type="number" name="precio" placeholder="Precio" step="0.01" required>    
+    <input type="number" name="cantidad" placeholder="Cantidad" step="0.01" required>
+    <input type="text" name="proveedor" placeholder="Proveedor" required>
+    <input type="file" name="imagen" accept="image/*" required>
     {% endif %}
 
     <button type="submit">Guardar</button>
