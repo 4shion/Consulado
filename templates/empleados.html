@@ -1,6 +1,96 @@
-<a href="/swicht_main">IMG</a>
-<a href="/swicht_clientes">Clientes</a>
-<a href="/swicht_empleados">Empleados</a>
-<a href="/swicht_productos">Productos</a>
-<a href="/swicht_proveedores">Proveedores</a>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+    <p>{{ message }}</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<br>
+
+<a href="/swicht_main" onclick="resetFormulario()">IMG</a>
+<a href="/swicht_clientes" onclick="resetFormulario()">Clientes</a>
+<a href="/swicht_empleados" onclick="resetFormulario()">Empleados</a>
+<a href="/swicht_productos" onclick="resetFormulario()">Productos</a>
+<a href="/swicht_proveedores" onclick="resetFormulario()">Proveedores</a>
 <a href="/menu">Menu</a>
+
+<br>
+
+<script>
+    function resetFormulario() {
+        fetch('/reset_bandera', { method: 'POST' })
+            .then(response => console.log("Bandera cambiada en el servidor"))
+            .catch(error => console.error("Error al cambiar bandera:", error));
+    }
+</script>
+
+<br>
+
+<form action="/agg_empleados" method="POST" enctype="multipart/form-data">
+    {% if bandera %}
+    <!-- Editar empleado -->
+    <input type="text" name="nombre" placeholder="Nombre" value="{{ empleado_m[1] }}" required>
+    <input type="text" name="apellido" placeholder="Apellido" value="{{ empleado_m[2] }}" required>
+    <input type="text" name="numero" placeholder="Número" value="{{ empleado_m[3] }}" required>
+    <input type="email" name="gmail" placeholder="Correo electrónico" value="{{ empleado_m[4] }}" required>
+    {% else %}
+    <!-- Agregar nuevo empleado -->
+    <input type="text" name="nombre" placeholder="Nombre" required>
+    <input type="text" name="apellido" placeholder="Apellido" required>
+    <input type="text" name="numero" placeholder="Número" required>
+    <input type="email" name="gmail" placeholder="Correo electrónico" required>
+    {% endif %}
+
+    <button type="submit">Guardar</button>
+    <button type="button" onclick="window.location.href='/swicht_empleados'; resetFormulario()">Limpiar</button>
+</form>
+
+<br>
+
+<script>
+    function confirmarEliminacion() {
+        return confirm("¿Estás seguro de que deseas eliminar este empleado?");
+    }
+</script>
+
+<br>
+
+<form action="{{ url_for('buscar_empleados') }}" method="GET">
+    <input type="text" name="query" placeholder="Buscar empleados..." required>
+    <button type="submit">Buscar</button>
+</form>
+
+<br>
+
+{% if query %}
+    <h3>Resultados para "{{ query }}"</h3>
+{% endif %}
+
+<br>
+
+<table>
+    <thead>
+        <tr>
+            <td>Nombre</td>
+            <td>Apellido</td>
+            <td>Número</td>
+            <td>Gmail</td>
+            <td>Operaciones</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for empleado in empleados %}
+            <tr>
+                <td>{{ empleado[1] }}</td>  <!-- Nombre -->
+                <td>{{ empleado[2] }}</td>  <!-- Apellido -->
+                <td>{{ empleado[3] }}</td>  <!-- Número -->
+                <td>{{ empleado[4] }}</td>  <!-- Gmail -->
+                <td>
+                    <a href="/editar_empleados/{{ empleado[0] }}" onclick="window.location.href='/swicht_empleados'">Editar</a>
+                    <a href="/eliminar_empleados/{{ empleado[0] }}" onclick="resetFormulario(); return confirmarEliminacion()">Eliminar</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

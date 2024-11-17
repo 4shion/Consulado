@@ -36,10 +36,27 @@ def swicht_main():
 def swicht_clientes():
     return render_template('clientes.html')
 
-#Boton Empleados
+#Botón empleados
 @app.route('/swicht_empleados')
 def swicht_empleados():
-    return render_template('empleados.html')
+    cur = mysql.connection.cursor()
+    cur.execute('''
+        SELECT idEmpleados, nombre, apellido, numero, gmail, estado
+        FROM empleados
+        WHERE estado = TRUE
+    ''')
+    data = cur.fetchall()
+    
+    # Preparar los datos para la tabla
+    empleados = []
+    for row in data:
+        # Incluye el ID como el primer elemento para facilitar operaciones
+        empleados.append((row[0], row[1], row[2], row[3], row[4]))
+
+    empleado_m = session.get('empleado_m')
+    session.pop('empleado_m', None)
+
+    return render_template('empleados.html', empleados=empleados, bandera=bandera, empleado_m=empleado_m)
 
 #Boton Productos
 @app.route('/swicht_productos')
@@ -482,6 +499,161 @@ def buscar_proveedores():
     proveedores = [(row[0], row[1], row[2], row[3]) for row in resultados]
 
     return render_template('proveedores.html', proveedores=proveedores, query=query, bandera=bandera)
+
+#Agregar empleados
+@app.route('/agg_empleados', methods=['POST'])
+def agg_empleados():
+    global bandera
+
+    if bandera:
+        id_empleado = session.get('idEmpleado')
+        session.pop('idEmpleado', None)
+        bandera = False
+
+        nombre = request.form['nombre']
+        apellido = request.form['apellido']
+        numero = request.form['numero']
+        gmail = request.form['gmail']
+
+        # Validaciones básicas
+        errores = []
+
+        # Validar que el nombre no sea solo números
+        if nombre.isdigit():
+            errores.append("El nombre no puede contener solo números.")
+        
+        # Validar que el apellido no sea solo números
+        if apellido.isdigit():
+            errores.append("El apellido no puede contener solo números.")
+
+        # Validar que el número contenga solo números
+        if numero and not numero.isdigit():
+            errores.append("El número debe contener solo números.")
+
+        # Si hay errores, devolverlos al usuario
+        if errores:
+            for error in errores:
+                flash(error)
+            return redirect(url_for('swicht_empleados'))
+
+        # Actualizar empleado si `bandera` está activada
+        cur = mysql.connection.cursor()
+        cur.execute(''' 
+            UPDATE empleados
+            SET nombre = %s, apellido = %s, numero = %s, gmail = %s
+            WHERE idEmpleados = %s
+        ''', (nombre, apellido, numero, gmail, id_empleado))
+        mysql.connection.commit()
+
+        flash('Empleado modificado satisfactoriamente')
+        return redirect(url_for('swicht_empleados'))
+
+    else:
+        if request.method == 'POST':
+            nombre = request.form['nombre']
+            apellido = request.form['apellido']
+            numero = request.form['numero']
+            gmail = request.form['gmail']
+
+            # Validaciones básicas
+            errores = []
+
+            # Validar que el nombre no sea solo números
+            if nombre.isdigit():
+                errores.append("El nombre no puede contener solo números.")
+
+            # Validar que el apellido no sea solo números
+            if apellido.isdigit():
+                errores.append("El apellido no puede contener solo números.")
+
+            # Validar que el número contenga solo números
+            if numero and not numero.isdigit():
+                errores.append("El número debe contener solo números.")
+
+            # Validar si el empleado ya existe en la base de datos
+            cur = mysql.connection.cursor()
+            cur.execute("SELECT COUNT(*) FROM empleados WHERE nombre = %s AND apellido = %s", (nombre, apellido))
+            empleado_existe = cur.fetchone()[0]
+
+            if empleado_existe > 0:
+                errores.append(f"El empleado '{nombre} {apellido}' ya existe en la base de datos.")
+
+            # Si hay errores, devolverlos al usuario
+            if errores:
+                for error in errores:
+                    flash(error)
+                return redirect(url_for('swicht_empleados'))
+
+            # Insertar empleado
+            cur = mysql.connection.cursor()
+            cur.execute('''
+                INSERT INTO empleados (nombre, apellido, numero, gmail, estado)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (nombre, apellido, numero, gmail, True))
+            mysql.connection.commit()
+
+            flash('Empleado añadido satisfactoriamente')
+            return redirect(url_for('swicht_empleados'))
+
+#Eliminar empleados
+@app.route('/eliminar_empleados/<id>')
+def delete_empleados(id):
+    cur = mysql.connection.cursor()
+    cur.execute('UPDATE empleados SET estado = %s WHERE idEmpleados = %s', (False, id))
+    mysql.connection.commit()
+
+    flash('Empleado removido correctamente')
+
+    return redirect(url_for('swicht_empleados'))
+
+#Editar empleados
+@app.route('/editar_empleados/<id>')
+def editar_empleado(id):
+    cur = mysql.connection.cursor()
+    cur.execute('''
+        SELECT idEmpleados, nombre, apellido, numero, gmail, estado
+        FROM empleados
+        WHERE idEmpleados = %s
+    ''', (id,))
+    data = cur.fetchone()
+
+    # Convertir los datos a una lista para poder modificarlos si es necesario
+    data = list(data)
+    data[5] = None  # Limpiar el campo 'estado' para no enviarlo a la plantilla
+
+    session['empleado_m'] = data
+    session['idEmpleado'] = data[0]  # Guardar el ID del empleado en la sesión
+
+    global bandera
+    bandera = True
+
+    return redirect(url_for('swicht_empleados'))
+
+#Buscar empleados
+@app.route('/buscar_empleados/', methods=['GET'])
+def buscar_empleados():
+    global bandera
+
+    # Obtener el término de búsqueda desde los parámetros de la URL
+    query = request.args.get('query', '').strip()
+
+    # Validar que no esté vacío
+    if not query:
+        flash("Por favor, ingresa un término de búsqueda.")
+        return redirect(url_for('swicht_empleados'))
+
+    cur = mysql.connection.cursor()
+    cur.execute('''
+        SELECT idEmpleados, nombre, apellido, numero, gmail, estado
+        FROM empleados
+        WHERE nombre LIKE %s AND estado = True
+    ''', (f"%{query}%",))  # Buscar empleados cuyo nombre contenga el texto de búsqueda
+    resultados = cur.fetchall()
+
+    # Convertir los resultados a una lista de tuplas (formato simple)
+    empleados = [(row[0], row[1], row[2], row[3], row[4]) for row in resultados]
+
+    return render_template('empleados.html', empleados=empleados, query=query, bandera=bandera)
 
 #Reset Bandera
 @app.route('/reset_bandera', methods=['POST'])
