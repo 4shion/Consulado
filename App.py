@@ -1,6 +1,7 @@
 # pip3 install flask flask-mysqldb
 import base64
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+import os
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
 from flask_mysqldb import MySQL
 
 # Creamos un objeto con el nombre app y le pasamos el parámetro name
@@ -31,10 +32,27 @@ def Index():
 def swicht_main():
     return render_template('index.html')
 
-#Boton Clientes
+# Botón clientes
 @app.route('/swicht_clientes')
 def swicht_clientes():
-    return render_template('clientes.html')
+    cur = mysql.connection.cursor()
+    cur.execute(''' 
+        SELECT idClientes, nombre, telefono, gmail, estado 
+        FROM clientes 
+        WHERE estado = TRUE
+    ''')
+    data = cur.fetchall()
+
+    # Preparar los datos para la tabla
+    clientes = []
+    for row in data:
+        # Incluye el ID como el primer elemento para facilitar operaciones
+        clientes.append((row[0], row[1], row[2], row[3], row[4]))
+
+    cliente_m = session.get('cliente_m')
+    session.pop('cliente_m', None)
+
+    return render_template('clientes.html', clientes=clientes, bandera=bandera, cliente_m=cliente_m)
 
 #Botón empleados
 @app.route('/swicht_empleados')
@@ -113,10 +131,18 @@ def swicht_proveedores():
 
     return render_template('proveedores.html', proveedores=proveedores, bandera=bandera, proveedor_m=proveedor_m)
     
-#Boton menu
+# Ruta para descargar el archivo PDF
 @app.route('/menu')
 def menu():
-    return redirect(url_for('/swicht_productos'))
+    # Ruta relativa al directorio 'pdfs'
+    carpeta_pdfs = os.path.join(os.getcwd(), 'pdfs')
+    nombre_pdf = 'Menú café consulado .pdf'
+    
+    # Verificar si el archivo existe
+    if os.path.exists(os.path.join(carpeta_pdfs, nombre_pdf)):
+        return send_from_directory(carpeta_pdfs, nombre_pdf, as_attachment=True)  # Enviar el archivo como adjunto
+    else:
+        return redirect(url_for('index'))  # Redirigir al inicio o a la página que desees
 
 #Agregar productos
 @app.route('/agg_productos', methods = ['POST'])
@@ -654,6 +680,151 @@ def buscar_empleados():
     empleados = [(row[0], row[1], row[2], row[3], row[4]) for row in resultados]
 
     return render_template('empleados.html', empleados=empleados, query=query, bandera=bandera)
+
+#Agregar clientes
+@app.route('/agg_clientes', methods=['POST'])
+def agg_clientes():
+    global bandera
+
+    if bandera:
+        id_cliente = session.get('idCliente')
+        session.pop('idCliente', None)
+        bandera = False
+
+        nombre = request.form['nombre']
+        telefono = request.form['telefono']
+        gmail = request.form['gmail']
+
+        # Validaciones básicas
+        errores = []
+
+        # Validar que el nombre no sea solo números
+        if nombre.isdigit():
+            errores.append("El nombre no puede contener solo números.")
+        
+        # Validar que el teléfono contenga solo números
+        if telefono and not telefono.isdigit():
+            errores.append("El teléfono debe contener solo números.")
+
+        # Si hay errores, devolverlos al usuario
+        if errores:
+            for error in errores:
+                flash(error)
+            return redirect(url_for('swicht_clientes'))
+
+        # Actualizar cliente si `bandera` está activada
+        cur = mysql.connection.cursor()
+        cur.execute(''' 
+            UPDATE clientes
+            SET nombre = %s, telefono = %s, gmail = %s
+            WHERE idClientes = %s
+        ''', (nombre, telefono, gmail, id_cliente))
+        mysql.connection.commit()
+
+        flash('Cliente modificado satisfactoriamente')
+        return redirect(url_for('swicht_clientes'))
+
+    else:
+        if request.method == 'POST':
+            nombre = request.form['nombre']
+            telefono = request.form['telefono']
+            gmail = request.form['gmail']
+
+            # Validaciones básicas
+            errores = []
+
+            # Validar que el nombre no sea solo números
+            if nombre.isdigit():
+                errores.append("El nombre no puede contener solo números.")
+
+            # Validar que el teléfono contenga solo números
+            if telefono and not telefono.isdigit():
+                errores.append("El teléfono debe contener solo números.")
+
+            # Validar si el cliente ya existe en la base de datos
+            cur = mysql.connection.cursor()
+            cur.execute("SELECT COUNT(*) FROM clientes WHERE nombre = %s", (nombre,))
+            cliente_existe = cur.fetchone()[0]
+
+            if cliente_existe > 0:
+                errores.append(f"El cliente '{nombre}' ya existe en la base de datos.")
+
+            # Si hay errores, devolverlos al usuario
+            if errores:
+                for error in errores:
+                    flash(error)
+                return redirect(url_for('swicht_clientes'))
+
+            # Insertar cliente
+            cur = mysql.connection.cursor()
+            cur.execute(''' 
+                INSERT INTO clientes (nombre, telefono, gmail, estado)
+                VALUES (%s, %s, %s, %s)
+            ''', (nombre, telefono, gmail, True))
+            mysql.connection.commit()
+
+            flash('Cliente añadido satisfactoriamente')
+            return redirect(url_for('swicht_clientes'))
+
+#Eliminar clientes
+@app.route('/eliminar_clientes/<id>')
+def delete_clientes(id):
+    cur = mysql.connection.cursor()
+    cur.execute('UPDATE clientes SET estado = %s WHERE idClientes = %s', (False, id))
+    mysql.connection.commit()
+
+    flash('Cliente removido correctamente')
+
+    return redirect(url_for('swicht_clientes'))
+
+#Editar clientes
+@app.route('/editar_clientes/<id>')
+def editar_cliente(id):
+    cur = mysql.connection.cursor()
+    cur.execute(''' 
+        SELECT idClientes, nombre, telefono, gmail, estado 
+        FROM clientes
+        WHERE idClientes = %s
+    ''', (id,))
+    data = cur.fetchone()
+
+    # Convertir los datos a una lista para poder modificarlos si es necesario
+    data = list(data)
+    data[4] = None  # Limpiar el campo 'estado' para no enviarlo a la plantilla
+
+    session['cliente_m'] = data
+    session['idCliente'] = data[0]  # Guardar el ID del cliente en la sesión
+
+    global bandera
+    bandera = True
+
+    return redirect(url_for('swicht_clientes'))
+
+#Buscar clientes
+@app.route('/buscar_clientes/', methods=['GET'])
+def buscar_clientes():
+    global bandera
+
+    # Obtener el término de búsqueda desde los parámetros de la URL
+    query = request.args.get('query', '').strip()
+
+    # Validar que no esté vacío
+    if not query:
+        flash("Por favor, ingresa un término de búsqueda.")
+        return redirect(url_for('swicht_clientes'))
+
+    cur = mysql.connection.cursor()
+    cur.execute(''' 
+        SELECT idClientes, nombre, telefono, gmail, estado
+        FROM clientes
+        WHERE nombre LIKE %s AND estado = True
+    ''', (f"%{query}%",))  # Buscar clientes cuyo nombre contenga el texto de búsqueda
+    resultados = cur.fetchall()
+
+    # Convertir los resultados a una lista de tuplas (formato simple)
+    clientes = [(row[0], row[1], row[2], row[3]) for row in resultados]
+
+    return render_template('clientes.html', clientes=clientes, query=query, bandera=bandera)
 
 #Reset Bandera
 @app.route('/reset_bandera', methods=['POST'])

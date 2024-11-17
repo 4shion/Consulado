@@ -13,7 +13,16 @@
 <a href="/swicht_empleados" onclick="resetFormulario()">Empleados</a>
 <a href="/swicht_productos" onclick="resetFormulario()">Productos</a>
 <a href="/swicht_proveedores" onclick="resetFormulario()">Proveedores</a>
-<a href="/menu">Menu</a>
+<a href="{{ url_for('menu') }}" id="downloadLink">Menu</a>
+
+<br>
+
+<script>
+    // Verifica si el enlace fue clickeado y activa la descarga
+    document.getElementById('downloadLink').addEventListener('click', function() {
+        alert("El archivo PDF está siendo descargado.");
+    });
+</script>
 
 <br>
 
