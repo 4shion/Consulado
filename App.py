@@ -23,6 +23,10 @@ app.secret_key = 'mysecretkey'
 bandera = False
 
 #Inicio
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
+
 @app.route('/')
 def Index():
     return render_template('index.html')
@@ -332,7 +336,7 @@ def editar_producto(id):
         FROM productos p
         JOIN proveedores pr ON p.proveedores_idProveedor = pr.idProveedor
         WHERE p.idProductos = %s
-    ''', (id))
+    ''', (id,))
     data = cur.fetchone()
 
     data = list(data)

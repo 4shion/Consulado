@@ -6,96 +6,126 @@
 {% endif %}
 {% endwith %}
 
-<br>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafe Consulado</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
 
-<a href="/swicht_main" onclick="resetFormulario()">IMG</a>
-<a href="/swicht_clientes" onclick="resetFormulario()">Clientes</a>
-<a href="/swicht_empleados" onclick="resetFormulario()">Empleados</a>
-<a href="/swicht_productos" onclick="resetFormulario()">Productos</a>
-<a href="/swicht_proveedores" onclick="resetFormulario()">Proveedores</a>
-<a href="{{ url_for('menu') }}" id="downloadLink">Menu</a>
+    <!-- NAVBAR -->
+    <header class="header">
+        <a href="/swicht_main" onclick="resetFormulario()" class="logo"><img src="{{ url_for('static', filename='assets/logo.png') }}" alt=""></a>
 
-<br>
+        <i class='bx bx-dots-horizontal-rounded' id="menu-icon"></i>
 
-<script>
-    // Verifica si el enlace fue clickeado y activa la descarga
-    document.getElementById('downloadLink').addEventListener('click', function() {
-        alert("El archivo PDF está siendo descargado.");
-    });
-</script>
+        <nav class="navbar">
+            <a href="/swicht_productos" onclick="resetFormulario()">PRODUCTOS</a>
+            <a href="/swicht_clientes" onclick="resetFormulario()">CLIENTES</a>
+            <a href="/swicht_empleados" onclick="resetFormulario()">EMPLEADOS</a>
+            <a href="/swicht_proveedores" onclick="resetFormulario()">PROVEEDORES</a>
+            <a href="{{ url_for('menu') }}" id="downloadLink">MENÚ</a>
+        </nav>
+    </header>
+    <!-- FIN NAVBAR -->
 
-<br>
+    <!-- CLIENTES -->
+    <section class="container">
+        <h1>NUESTROS CLIENTES</h1>
 
-<script>
-    function resetFormulario() {
-        fetch('/reset_bandera', { method: 'POST' })
-            .then(response => console.log("Bandera cambiada en el servidor"))
-            .catch(error => console.error("Error al cambiar bandera:", error));
-    }
-</script>
+        <script>
+            // Verifica si el enlace fue clickeado y activa la descarga
+            document.getElementById('downloadLink').addEventListener('click', function() {
+                alert("El archivo PDF está siendo descargado.");
+            });
+        </script>
+    
+        <script>
+            function resetFormulario() {
+                fetch('/reset_bandera', { method: 'POST' })
+                    .then(response => console.log("Bandera cambiada en el servidor"))
+                    .catch(error => console.error("Error al cambiar bandera:", error));
+            }
+        </script>
 
-<br>
+        <div class="form">
+            <div class="text">
+                <h2>Agregar un Nuevo Cliente</h2>
+            </div>
+            
+            <form action="/agg_clientes" method="POST" enctype="multipart/form-data">
+                {% if bandera %}
+                <!-- Editar cliente -->
+                <input type="text" name="nombre" placeholder="Nombre" value="{{ cliente_m[1] }}" required>
+                <input type="text" name="telefono" placeholder="Teléfono" value="{{ cliente_m[2] }}" required>
+                <input type="email" name="gmail" placeholder="Correo electrónico" value="{{ cliente_m[3] }}" required>
+                {% else %}
+                <!-- Agregar nuevo cliente -->
+                <input type="text" name="nombre" placeholder="Nombre" required>
+                <input type="text" name="telefono" placeholder="Teléfono" required>
+                <input type="email" name="gmail" placeholder="Correo electrónico" required>
+                {% endif %}
+        
+                <button type="submit">Guardar</button>
+                <button type="button" onclick="window.location.href='/swicht_clientes'; resetFormulario()">Limpiar</button>
+            </form>
+        </div>
 
-<form action="/agg_clientes" method="POST" enctype="multipart/form-data">
-    {% if bandera %}
-    <!-- Editar cliente -->
-    <input type="text" name="nombre" placeholder="Nombre" value="{{ cliente_m[1] }}" required>
-    <input type="text" name="telefono" placeholder="Teléfono" value="{{ cliente_m[2] }}" required>
-    <input type="email" name="gmail" placeholder="Correo electrónico" value="{{ cliente_m[3] }}" required>
-    {% else %}
-    <!-- Agregar nuevo cliente -->
-    <input type="text" name="nombre" placeholder="Nombre" required>
-    <input type="text" name="telefono" placeholder="Teléfono" required>
-    <input type="email" name="gmail" placeholder="Correo electrónico" required>
-    {% endif %}
+        <script>
+            function confirmarEliminacion() {
+                return confirm("¿Estás seguro de que deseas eliminar este cliente?");
+            }
+        </script>
 
-    <button type="submit">Guardar</button>
-    <button type="button" onclick="window.location.href='/swicht_clientes'; resetFormulario()">Limpiar</button>
-</form>
+        <div class="form">
+            <div class="text">
+                <h2>Ver Clientes</h2>
+            </div>
 
-<br>
+            <form action="{{ url_for('buscar_clientes') }}" method="GET">
+                <input type="text" name="query" placeholder="Buscar clientes..." required>
+                <button type="submit">Buscar</button>
+            </form>
 
-<script>
-    function confirmarEliminacion() {
-        return confirm("¿Estás seguro de que deseas eliminar este cliente?");
-    }
-</script>
+        {% if query %}
+            <h3>Resultados para "{{ query }}"</h3>
+        {% endif %}
+        </div>
 
-<br>
+        <div class="table">
+            <table>
+                <thead>
+                    <tr>
+                        <td>Nombre</td>
+                        <td>Teléfono</td>
+                        <td>Gmail</td>
+                        <td>Operaciones</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente[1] }}</td>  <!-- Nombre -->
+                            <td>{{ cliente[2] }}</td>  <!-- Teléfono -->
+                            <td>{{ cliente[3] }}</td>  <!-- Gmail -->
+                            <td>
+                                <a href="/editar_clientes/{{ cliente[0] }}" onclick="window.location.href='/swicht_clientes'">Editar</a>
+                                <a href="/eliminar_clientes/{{ cliente[0] }}" onclick="resetFormulario(); return confirmarEliminacion()">Eliminar</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-<form action="{{ url_for('buscar_clientes') }}" method="GET">
-    <input type="text" name="query" placeholder="Buscar clientes..." required>
-    <button type="submit">Buscar</button>
-</form>
+     </section>
+     <!-- FIN CLIENTES -->
 
-<br>
-
-{% if query %}
-    <h3>Resultados para "{{ query }}"</h3>
-{% endif %}
-
-<br>
-
-<table>
-    <thead>
-        <tr>
-            <td>Nombre</td>
-            <td>Teléfono</td>
-            <td>Gmail</td>
-            <td>Operaciones</td>
-        </tr>
-    </thead>
-    <tbody>
-        {% for cliente in clientes %}
-            <tr>
-                <td>{{ cliente[1] }}</td>  <!-- Nombre -->
-                <td>{{ cliente[2] }}</td>  <!-- Teléfono -->
-                <td>{{ cliente[3] }}</td>  <!-- Gmail -->
-                <td>
-                    <a href="/editar_clientes/{{ cliente[0] }}" onclick="window.location.href='/swicht_clientes'">Editar</a>
-                    <a href="/eliminar_clientes/{{ cliente[0] }}" onclick="resetFormulario(); return confirmarEliminacion()">Eliminar</a>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+     <!-- SCRIPTS -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
